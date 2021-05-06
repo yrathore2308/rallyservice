@@ -12,6 +12,8 @@ router.post('/upload-avatar', async (req, res) => {
             });
         } else {
             console.log('file details',req.files);
+            console.log('body details>>>>',req.body);
+            
             let avatar = req.files.avatar;
             avatar.mv('./uploads/' + avatar.name);
             const sastService=new SastService();

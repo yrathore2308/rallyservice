@@ -33,22 +33,16 @@ class RallyService {
     getUserStoryDetails() {
         return new Promise(async (resolve, reject) => {
             this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/${this.userStory[0]}`;
-            console.log('updated params',this.requestParams);
             let response=await this.getApiResult();
-            console.log('user hierrachy response',response);
             let revisionApiUrl=response["HierarchicalRequirement"]["RevisionHistory"]["_ref"]+"/Revisions";
-            console.log('revision history url',revisionApiUrl);
 
             this.requestParams.url=revisionApiUrl;
-            console.log('updated params>>>>',this.requestParams);
-            
             let revisionHistory=await this.getApiResult();
-            console.log('revision history',JSON.stringify(revisionHistory.QueryResult.Results));
             let history=revisionHistory;
             if(history.QueryResult["Errors"].length>0){
                
                  workInfo["userStory"]={
-                "userstoryid":this.userStory[0],
+                "userStoryId":this.userStory[0],
                 "scheduleState":response.HierarchicalRequirement.ScheduleState,
                 "acceptedDate":response.HierarchicalRequirement.AcceptedDate,
                 "creationDate": response.HierarchicalRequirement.CreationDate,
@@ -65,28 +59,28 @@ class RallyService {
                 let updatedRevisionHistory=[];
                 for (let index = 0; index < revisionHistoryList.length; index++) {
                     updatedRevisionHistory.push({
-                        "CreationDate":revisionHistoryList[index].CreationDate,
-                        "RevisionNumber":revisionHistoryList[index].RevisionNumber,
-                        "Description":revisionHistoryList[index].Description,
-                        "RevisionTriggeredBy":revisionHistoryList[index].User._refObjectName
+                        "creationDate":revisionHistoryList[index].CreationDate,
+                        "revisionNumber":revisionHistoryList[index].RevisionNumber,
+                        "description":revisionHistoryList[index].Description,
+                        "revisionTriggeredBy":revisionHistoryList[index].User._refObjectName
                     });
                     
                 }
                
                 workInfo["userStory"]={
-                    "userstoryid":this.userStory[0],
+                    "userStoryId":this.userStory[0],
                     "scheduleState":response.HierarchicalRequirement.ScheduleState,
                     "acceptedDate":response.HierarchicalRequirement.AcceptedDate,
                     "creationDate": response.HierarchicalRequirement.CreationDate,
                     "planEstimate": response.HierarchicalRequirement.PlanEstimate,
                     "flowStateChangedDate": response.HierarchicalRequirement.FlowStateChangedDate,
                     "revisionHistory":{
-                        "TotalRevisionCount":history.QueryResult.TotalResultCount,
-                        "Revisions":updatedRevisionHistory
+                        "totalRevisionCount":history.QueryResult.TotalResultCount,
+                        "revisions":updatedRevisionHistory
                     }
                 }
                 console.log('finall>>> updation',JSON.stringify(workInfo["userStory"]));
-
+                resolve(true);
             }
         
         });
@@ -94,6 +88,43 @@ class RallyService {
     }
     getDefectDetails() {
         return new Promise(async (resolve, reject) => {
+            this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/defect/${this.defect[0]}`;
+            let defectResponse=await this.getApiResult();
+            if(defectResponse.Defect["Errors"].length>0){
+                console.log('No defects available for this Defect ID');
+                resolve({"message":"No defects available for this Defect ID"})
+            }else{
+                let defectRevisionApiUrl=defectResponse["Defect"]["RevisionHistory"]["_ref"]+"/Revisions";
+                this.requestParams.url=defectRevisionApiUrl;
+                let defectRevisionResponse=await this.getApiResult();
+                let revisionHistoryList=defectRevisionResponse.QueryResult.Results;
+                let updatedRevisionHistory=[];
+                for (let index = 0; index < revisionHistoryList.length; index++) {
+                    updatedRevisionHistory.push({
+                        "creationDate":revisionHistoryList[index].CreationDate,
+                        "revisionNumber":revisionHistoryList[index].RevisionNumber,
+                        "description":revisionHistoryList[index].Description,
+                        "revisionTriggeredBy":revisionHistoryList[index].User._refObjectName
+                    });
+                    
+                }
+                workInfo["defects"]={
+                    "defectId":this.defect[0],
+                    "scheduleState":defectResponse.Defect.ScheduleState,
+                    "acceptedDate":defectResponse.Defect.AcceptedDate,
+                    "creationDate": defectResponse.Defect.CreationDate,
+                    "planEstimate": defectResponse.Defect.PlanEstimate,
+                    "flowStateChangedDate": defectResponse.Defect.FlowStateChangedDate,
+                    "revisionHistory":{
+                        "totalRevisionCount":defectRevisionResponse.QueryResult.TotalResultCount,
+                        "revisions":updatedRevisionHistory
+                    }
+                }
+                console.log('finall>>> updation after defects',JSON.stringify(workInfo["defects"]));
+                resolve(true);
+                
+            }
+          
 
         });
 
@@ -123,6 +154,7 @@ class RallyService {
         return new Promise(async (resolve, reject) => {
           
             let rels = this.releaseby.split("/");
+            console.log('list of rels',rels);
             if(rels.indexOf("All") > -1 || rels.indexOf("ALL") > -1 || rels.indexOf("all") > -1) {
                 let listOfApis = [
                     this.getUserStoryDetails(),
