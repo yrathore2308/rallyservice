@@ -47,6 +47,7 @@ class RallyService {
                 "acceptedDate":response.HierarchicalRequirement.AcceptedDate,
                 "creationDate": response.HierarchicalRequirement.CreationDate,
                 "planEstimate": response.HierarchicalRequirement.PlanEstimate,
+                "release": response.HierarchicalRequirement.Release,
                 "flowStateChangedDate": response.HierarchicalRequirement.FlowStateChangedDate,
                 "revisionHistory":{
                     "Description":"No Revision history available for given User story ID"
@@ -73,6 +74,7 @@ class RallyService {
                     "acceptedDate":response.HierarchicalRequirement.AcceptedDate,
                     "creationDate": response.HierarchicalRequirement.CreationDate,
                     "planEstimate": response.HierarchicalRequirement.PlanEstimate,
+                    "release": response.HierarchicalRequirement.Release,
                     "flowStateChangedDate": response.HierarchicalRequirement.FlowStateChangedDate,
                     "revisionHistory":{
                         "totalRevisionCount":history.QueryResult.TotalResultCount,
@@ -114,6 +116,7 @@ class RallyService {
                     "acceptedDate":defectResponse.Defect.AcceptedDate,
                     "creationDate": defectResponse.Defect.CreationDate,
                     "planEstimate": defectResponse.Defect.PlanEstimate,
+                    "release": defectResponse.Defect.Release,
                     "flowStateChangedDate": defectResponse.Defect.FlowStateChangedDate,
                     "revisionHistory":{
                         "totalRevisionCount":defectRevisionResponse.QueryResult.TotalResultCount,
@@ -131,22 +134,48 @@ class RallyService {
     }
     getFeatureDetails() {
         return new Promise(async (resolve, reject) => {
-            let USId = this.userStory[0]; //423904935864  
-            let apiUrl = `https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/${USId}`;
-            let userDetails = await getApiResponse(apiUrl);
-            if(!!userDetails) {
-                if (userDetails.HierarchicalRequirement.Feature == null) {
-                    resolve({
-                        "Status" : "false",
-                        "Description"  : "No feature Id is associated with this User story"
+           try {
+            this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/portfolioitem/feature/${this.feature[0]}`;
+            let featureResponse=await this.getApiResult();
+            if(featureResponse.Feature["Errors"].length>0){
+                console.log('No Feature available for this Feature ID');
+                resolve({"message":"No Feature available for this Feature ID"})
+            }else{
+                let featureRevisionApiUrl=featureResponse["Feature"]["RevisionHistory"]["_ref"]+"/Revisions";
+                this.requestParams.url=featureRevisionApiUrl;
+                let featureRevisionResponse=await this.getApiResult();
+                let revisionHistoryList=featureRevisionResponse.QueryResult.Results;
+                let updatedRevisionHistory=[];
+                for (let index = 0; index < revisionHistoryList.length; index++) {
+                    updatedRevisionHistory.push({
+                        "creationDate":revisionHistoryList[index].CreationDate,
+                        "revisionNumber":revisionHistoryList[index].RevisionNumber,
+                        "description":revisionHistoryList[index].Description,
+                        "revisionTriggeredBy":revisionHistoryList[index].User._refObjectName
                     });
-                }else {
-                    this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/portfolioitem/feature/${this.feature[0]}`;
-                    let featureResponse=await this.getApiResult();
-                    console.log('feature response',featureResponse);
                     
                 }
+                workInfo["feature"]={
+                    "featureId":this.feature[0],
+                    "state":featureResponse.Feature["State"]["_refObjectName"],
+                    "creationDate": featureResponse.Feature.CreationDate,
+                    "percentDoneByStoryCount": featureResponse.Feature.PercentDoneByStoryCount,
+                    "percentDoneByStoryPlanEstimate": featureResponse.Feature.PercentDoneByStoryPlanEstimate,
+                    "release": featureResponse.Feature.Release,
+                    "revisionHistory":{
+                        "totalRevisionCount":featureRevisionResponse.QueryResult.TotalResultCount,
+                        "revisions":updatedRevisionHistory
+                    }
+                }
+                console.log('finall>>> updation after Feature',JSON.stringify(workInfo["feature"]));
+                resolve(true);
+                
             }
+          
+               
+           } catch (error) {
+               console.log('Error caught in catch block',error);
+           }
         });
     }
 

@@ -1,5 +1,5 @@
 {
-  "Releaseby": "UserStory/Defect",
+  "Releaseby": "UserStory/Defect/Feature",
   "UserStory" : ["603134002216"],
   "Defect" : ["600579655076"],
   "Feature" :  ["600923511316"]  
