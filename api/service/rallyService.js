@@ -34,26 +34,18 @@ class RallyService {
         return new Promise(async (resolve, reject) => {
             this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/${this.userStory[0]}`;
             let response=await this.getApiResult();
-            let revisionApiUrl=response["HierarchicalRequirement"]["RevisionHistory"]["_ref"]+"/Revisions";
-
+            if("OperationResult" in response){
+                console.log("inside if error userstory>>>>",response["OperationResult"]["Errors"]);
+                resolve({"message":"No userstory available for this userstory ID","errors":response["OperationResult"]["Errors"]});
+            }
+            else{
+                let revisionApiUrl=response["HierarchicalRequirement"]["RevisionHistory"]["_ref"]+"/Revisions";
             this.requestParams.url=revisionApiUrl;
             let revisionHistory=await this.getApiResult();
             let history=revisionHistory;
-            if(history.QueryResult["Errors"].length>0){
-               
-                 workInfo["userStory"]={
-                "userStoryId":this.userStory[0],
-                "scheduleState":response.HierarchicalRequirement.ScheduleState,
-                "acceptedDate":response.HierarchicalRequirement.AcceptedDate,
-                "creationDate": response.HierarchicalRequirement.CreationDate,
-                "planEstimate": response.HierarchicalRequirement.PlanEstimate,
-                "release": response.HierarchicalRequirement.Release,
-                "flowStateChangedDate": response.HierarchicalRequirement.FlowStateChangedDate,
-                "revisionHistory":{
-                    "Description":"No Revision history available for given User story ID"
-                }
-            }
-                console.log('work info model after updation',workInfo["userStory"]);
+            if("OperationResult" in history){
+                console.log("inside if error userstory>>>>",history["OperationResult"]["Errors"]);
+                resolve({"message":"No Revision history  available for this userstory ID","errors":history["OperationResult"]["Errors"]});
             }
             else{
                 let revisionHistoryList=history.QueryResult.Results;
@@ -83,8 +75,11 @@ class RallyService {
                 }
                 console.log('finall>>> updation',JSON.stringify(workInfo["userStory"]));
                 resolve(true);
+
             }
-        
+
+            }
+
         });
 
     }
@@ -92,39 +87,44 @@ class RallyService {
         return new Promise(async (resolve, reject) => {
             this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/defect/${this.defect[0]}`;
             let defectResponse=await this.getApiResult();
-            if(defectResponse.Defect["Errors"].length>0){
-                console.log('No defects available for this Defect ID');
-                resolve({"message":"No defects available for this Defect ID"})
+            if("OperationResult" in defectResponse){
+                console.log("inside if error defect>>>>",defectResponse["OperationResult"]["Errors"]);
+                resolve({"message":"No Defect available for this Defect ID","errors":defectResponse["OperationResult"]["Errors"]});
             }else{
                 let defectRevisionApiUrl=defectResponse["Defect"]["RevisionHistory"]["_ref"]+"/Revisions";
                 this.requestParams.url=defectRevisionApiUrl;
                 let defectRevisionResponse=await this.getApiResult();
-                let revisionHistoryList=defectRevisionResponse.QueryResult.Results;
-                let updatedRevisionHistory=[];
-                for (let index = 0; index < revisionHistoryList.length; index++) {
-                    updatedRevisionHistory.push({
-                        "creationDate":revisionHistoryList[index].CreationDate,
-                        "revisionNumber":revisionHistoryList[index].RevisionNumber,
-                        "description":revisionHistoryList[index].Description,
-                        "revisionTriggeredBy":revisionHistoryList[index].User._refObjectName
-                    });
-                    
-                }
-                workInfo["defects"]={
-                    "defectId":this.defect[0],
-                    "scheduleState":defectResponse.Defect.ScheduleState,
-                    "acceptedDate":defectResponse.Defect.AcceptedDate,
-                    "creationDate": defectResponse.Defect.CreationDate,
-                    "planEstimate": defectResponse.Defect.PlanEstimate,
-                    "release": defectResponse.Defect.Release,
-                    "flowStateChangedDate": defectResponse.Defect.FlowStateChangedDate,
-                    "revisionHistory":{
-                        "totalRevisionCount":defectRevisionResponse.QueryResult.TotalResultCount,
-                        "revisions":updatedRevisionHistory
+                if ("OperationResult" in defectRevisionResponse) {
+                    console.log("inside if error defect>>>>",defectRevisionResponse["OperationResult"]["Errors"]);
+                resolve({"message":"No Revision history available for this Defect ID","errors":defectRevisionResponse["OperationResult"]["Errors"]});
+                } else {
+                    let revisionHistoryList=defectRevisionResponse.QueryResult.Results;
+                    let updatedRevisionHistory=[];
+                    for (let index = 0; index < revisionHistoryList.length; index++) {
+                        updatedRevisionHistory.push({
+                            "creationDate":revisionHistoryList[index].CreationDate,
+                            "revisionNumber":revisionHistoryList[index].RevisionNumber,
+                            "description":revisionHistoryList[index].Description,
+                            "revisionTriggeredBy":revisionHistoryList[index].User._refObjectName
+                        });
+                        
                     }
+                    workInfo["defects"]={
+                        "defectId":this.defect[0],
+                        "scheduleState":defectResponse.Defect.ScheduleState,
+                        "acceptedDate":defectResponse.Defect.AcceptedDate,
+                        "creationDate": defectResponse.Defect.CreationDate,
+                        "planEstimate": defectResponse.Defect.PlanEstimate,
+                        "release": defectResponse.Defect.Release,
+                        "flowStateChangedDate": defectResponse.Defect.FlowStateChangedDate,
+                        "revisionHistory":{
+                            "totalRevisionCount":defectRevisionResponse.QueryResult.TotalResultCount,
+                            "revisions":updatedRevisionHistory
+                        }
+                    }
+                    console.log('finall>>> updation after defects',JSON.stringify(workInfo["defects"]));
+                    resolve(true);
                 }
-                console.log('finall>>> updation after defects',JSON.stringify(workInfo["defects"]));
-                resolve(true);
                 
             }
           
@@ -134,17 +134,22 @@ class RallyService {
     }
     getFeatureDetails() {
         return new Promise(async (resolve, reject) => {
-           try {
+    
             this.requestParams.url=`https://rally1.rallydev.com/slm/webservice/v2.0/portfolioitem/feature/${this.feature[0]}`;
             let featureResponse=await this.getApiResult();
-            if(featureResponse.Feature["Errors"].length>0){
-                console.log('No Feature available for this Feature ID');
-                resolve({"message":"No Feature available for this Feature ID"})
-            }else{
+            if("OperationResult" in featureResponse){
+                console.log("inside if error feature>>>>",featureResponse["OperationResult"]["Errors"]);
+                resolve({"message":"No Feature available for this Feature ID","errors":featureResponse["OperationResult"]["Errors"]});
+            }
+            else{
                 let featureRevisionApiUrl=featureResponse["Feature"]["RevisionHistory"]["_ref"]+"/Revisions";
                 this.requestParams.url=featureRevisionApiUrl;
                 let featureRevisionResponse=await this.getApiResult();
-                let revisionHistoryList=featureRevisionResponse.QueryResult.Results;
+                if ("OperationResult" in featureRevisionResponse) {
+                    console.log("inside if>>>>",featureRevisionResponse["OperationResult"]["Errors"]);
+                    resolve({"message":"No Revision history available for this Feature ID","errors":featureRevisionResponse["OperationResult"]["Errors"]});
+                } else {
+                    let revisionHistoryList=featureRevisionResponse.QueryResult.Results;
                 let updatedRevisionHistory=[];
                 for (let index = 0; index < revisionHistoryList.length; index++) {
                     updatedRevisionHistory.push({
@@ -169,13 +174,13 @@ class RallyService {
                 }
                 console.log('finall>>> updation after Feature',JSON.stringify(workInfo["feature"]));
                 resolve(true);
+                    
+                }
                 
             }
           
                
-           } catch (error) {
-               console.log('Error caught in catch block',error);
-           }
+          
         });
     }
 
