@@ -61,6 +61,7 @@ class RallyService {
                 }
                
                 workInfo["userStory"]={
+                    "userStoryName":response.HierarchicalRequirement.Name,
                     "userStoryId":this.userStory[0],
                     "scheduleState":response.HierarchicalRequirement.ScheduleState,
                     "acceptedDate":response.HierarchicalRequirement.AcceptedDate,
@@ -110,6 +111,7 @@ class RallyService {
                         
                     }
                     workInfo["defects"]={
+                        "defectName":defectResponse.Defect.Name,
                         "defectId":this.defect[0],
                         "scheduleState":defectResponse.Defect.ScheduleState,
                         "acceptedDate":defectResponse.Defect.AcceptedDate,
@@ -161,6 +163,7 @@ class RallyService {
                     
                 }
                 workInfo["feature"]={
+                    "featureName":featureResponse.Feature.Name,
                     "featureId":this.feature[0],
                     "state":featureResponse.Feature["State"]["_refObjectName"],
                     "creationDate": featureResponse.Feature.CreationDate,
@@ -209,6 +212,7 @@ class RallyService {
                     await this.getFeatureDetails();
                    }
                 }
+                resolve({"test":"success"})
                 
             }
         })

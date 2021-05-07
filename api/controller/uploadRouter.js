@@ -1,4 +1,5 @@
 const { json } = require('body-parser');
+const fs=require('fs');
 const express = require('express');
 const router = express.Router();
 const RallyService=require('../service/rallyService');
@@ -17,7 +18,17 @@ router.post('/upload-avatar', async (req, res) => {
             let avatar = req.files.avatar;
             avatar.mv('./uploads/' + avatar.name);
             const sastService=new SastService();
-            let response=sastService.main(avatar.name);
+            let response=await sastService.main(avatar.name);
+            
+            const dir = 'uploads';
+            fs.rmdir(dir, { recursive: true }, (err) => {
+                if (err) {
+                    throw err;
+                }
+            
+                console.log(`${dir} is deleted!`);
+            });
+            
            
             res.send(response);
         }
